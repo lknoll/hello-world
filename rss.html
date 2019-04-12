@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title></title>
+    
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+<style>
+	h3 { font-size:35px; font-weight: 400;
+			font-style: normal; padding-bottom:15px; padding-top:15px; 
+		}
+	
+	.highlight { background-color:#f7f7f7 !important; border-radius: 50px; color:#6495ED; }
+
+	.meeting-detail{ font-size:28px; font-weight:400; }
+	
+	.w3-card{box-shadow:0 2px 5px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12); background-color:#f7f7f7 !important; border-radius: 50px; margin-right:15px; color:#6495ED;}
+	.w3-container:after,.w3-container:before{content:"";display:table;clear:both}
+	.w3-container{padding:10px 10px 10px 10px}
+	.item { margin-left:10px; margin-top:5px; font-size:20px; }
+	.feed-title { height:100vh; color:white; }
+	.feed-desc h3 { padding-top:0px; padding-bottom:0px; }
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<script>
+
+jQuery(document).ready(function() { 
+	
+	var itemId = 0;
+	 
+	jQuery.get('https://www.legis.state.pa.us/WU01/LI/RSS/CMSH.xml', function (data) {
+		
+	    jQuery(data).find("item").each(function(){ 
+	        var el = jQuery(this);
+			var title = el.find("title").text();
+			var titleArr = title.split(" ");
+			var date = el.find("parss\\:MeetingDate").text();
+			var time = el.find("parss\\:MeetingTime").text();
+			var ctee = el.find("parss\\:Committee").text();
+			var location = el.find("parss\\:Location").text();
+			location = location.replace(/\|/g, "");
+			
+			var feedTitle = "<div class='row item' data-id='" + itemId + "'><div class='col-md-2'>" + formatDate(date) + "</div>" +
+                				"<div class='col-md-2'>" + time + "</div>" +
+                				"<div class='col-md-8'>" + ctee + "</div></div>";
+			
+			jQuery(".feed-title").append(feedTitle);
+			
+			var description = el.find("description").text();
+			description = description.replace(/<\/?[^>]+(>|$)/g, "");
+			description = description.replace(location, "");
+			description = description.replace (/&#{0,1}[a-z0-9]+;/ig, " ")
+			description = description.replace (/#{0,1}[a-z0-9]+;/ig, " ")
+						
+			var desc = "<div class='row d-none w3-container w3-card' id='desc-" + itemId + "'>" +
+				"<div class='col-md-12' style='color:#006600;'><h3>" + ctee + "</h3></div>" +
+				"<div class='col-md-12 meeting-detail' style='color:#006600;'>" + location + "<hr></div>" +
+				"<div class='col-md-12 meeting-detail'>" + description + "</div></div>";
+           	jQuery(".feed-desc").append(desc);
+	    	itemId++;
+			
+		});
+		
+		highlight(0)
+		
+	});
+});	
+
+function highlight(index)
+{
+	if (jQuery(".item").length > 0)
+	{
+		if (index >= jQuery(".item").length) 
+		{ 
+			index = 0; 
+			jQuery(".item").show()
+		}
+		
+		jQuery(".item").removeClass("highlight");
+		var currItem = jQuery(".feed-title").find(".item").eq(index);
+	
+		var elemTop = currItem.offset().top;
+		var bottom_of_element = elemTop + currItem.height();
+		var bottom_of_screen = jQuery(".feed-title").outerHeight();
+	
+		if (bottom_of_screen > bottom_of_element)
+		{ 
+			//in view
+		} 
+		else {
+			for (var i=index-1; i>=0; i--)
+			{ jQuery( jQuery(".feed-title").find(".item").eq(i) ).hide(); }				
+		}
+	
+		currItem.addClass("highlight");
+		descId = "desc-" + currItem.data("id");
+		jQuery(".feed-desc>.row").addClass("d-none");
+		jQuery("#"+descId).removeClass("d-none");
+	
+		setTimeout(function(){ highlight(index+1) }, 5000);	 
+	}
+	
+	else
+	{ 
+		//No items found 
+	}
+}
+
+function formatDate(date) {
+	try{
+		date = new Date(date);
+		
+		var monthNames = [
+			"Jan", "Feb", "Mar",
+			"Apr", "May", "Jun", "Jul",
+			"Aug", "Sep", "Oct",
+			"Nov", "Dec"
+	  	];
+	
+	  	var day = date.getDate();
+	  	var monthIndex = date.getMonth();
+	  	var year = date.getFullYear();
+		
+		return monthNames[monthIndex] + ' ' + day + ', ' + year;
+
+	}
+	catch(e){ return date; }
+}
+</script>
+
+</head>
+
+<body style="background-color:transparent !important; overflow:hidden !important;">
+	<div class="row">
+    	<div class="col-md-6 feed-title">
+    	</div>
+        <div class="col-md-1"></div>
+		<div class="col-md-5 feed-desc">
+    	</div>
+	</div>
+
+</body>
+
+</html>
